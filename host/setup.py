@@ -6,16 +6,31 @@ def read(fname):
     with open(filename, 'r') as f:
         return f.read()
 
+
+setup_req = []
+setup_options = {}
+
+
+# Deduce version, if possible.
+if os.path.isfile('../VERSION'):
+    setup_options['version'] = read('../VERSION').strip()
+else:
+    setup_options['version_config'] =  {
+        "version_format": '{tag}.dev+git.{sha}',
+        "starting_version": "2019.05.01"
+    }
+    setup_req.append('better-setuptools-git-version')
+
 setup(
     name='pygreat',
-    version='0.0', #TODO: Derive this from the main module.
+    setup_requires=setup_req,
     url='https://greatscottgadgets.com/greatfet/',
     license='BSD',
     entry_points={
         'console_scripts': [],
     },
     author='Katherine J. Temkin',
-    author_email='ktemkin@insomniasec.io',
+    author_email='ktemkin@greatscottgadgets.com',
     tests_require=[''],
     install_requires=['pyusb', 'future', 'backports.functools_lru_cache'],
     description='Python library for talking with libGreat devices',
@@ -36,5 +51,6 @@ setup(
         'Topic :: Scientific/Engineering',
         'Topic :: Security',
         ],
-    extras_require={}
+    extras_require={},
+    **setup_options
 )

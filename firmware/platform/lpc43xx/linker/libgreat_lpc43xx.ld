@@ -35,7 +35,11 @@ SECTIONS
 {
 	.text : {
 		. = ALIGN(0x400);
-		_text_ram = 0; /* Start of Code in RAM NULL because Copy of Code from ROM to RAM disabled */
+
+        /* Don't provide relocation targets, as we're not performing relocation on direct-to-RAM and XIP loads. */
+        _text_segment_rom = 0;
+		_text_segment_ram = 0;
+
 		*(.vectors)	/* Vector table */
 		*(.text*)	/* Program code */
 		. = ALIGN(4);
@@ -65,6 +69,17 @@ SECTIONS
 		KEEP (*(SORT(.fini_array.*)))
 		__fini_array_end = .;
 	} >rom
+	/**
+	 * Array of task pointers that allow us to schedule things without explicitly adding them to our main routine.
+	 * Supports our simple round-robin scheduler.
+	 */
+	.task_array : {
+		. = ALIGN(4);
+		__task_array_start = .;
+		KEEP (*(.task_array))
+		KEEP (*(SORT(.task_array.*)))
+		__task_array_end = .;
+	} >rom
 
 	/*
 	 * Another section used by C++ stuff, appears when using newlib with
@@ -73,7 +88,7 @@ SECTIONS
 	.ARM.extab : {
 		*(.ARM.extab*)
 	} >rom
-    
+
 	/* exception index - required due to libgcc.a issuing /0 exceptions */
 	.ARM.exidx : {
 		__exidx_start = .;
@@ -82,9 +97,11 @@ SECTIONS
 	} >rom
 
 	. = ALIGN(4);
-	_etext = .;
-	_etext_ram = 0; /* Start of Code in RAM NULL because Copy of Code from ROM to RAM disabled */
-	_etext_rom = 0; /* Start of Code in RAM NULL because Copy of Code from ROM to RAM disabled */
+    _text_segment_end = .;
+
+    /* Don't provide relocation targets, as we're not performing relocation on direct-to-RAM and XIP loads. */
+    _text_segment_rom_end = 0;
+    _text_segment_ram_end = 0;
 
 	. = ORIGIN(ram_local2);
 
@@ -124,11 +141,6 @@ SECTIONS
 		*(COMMON)
 		. = ALIGN(4);
 		_ebss = .;
-	} >ram_local2
-
-	/* exception unwind data - required due to libgcc.a issuing /0 exceptions */
-	.ARM.extab : {
-		*(.ARM.extab*)
 	} >ram_local2
 
 	/*
